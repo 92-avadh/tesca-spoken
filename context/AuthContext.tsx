@@ -32,22 +32,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (supabase) {
           const { data: { session } } = await supabase.auth.getSession();
           if (session?.user) {
+            const { data: profile } = await supabase.from('profiles').select('role, name').eq('id', session.user.id).single();
             setUser({
               id: session.user.id,
               email: session.user.email || '',
-              role: (session.user.user_metadata?.role as 'student' | 'admin') || 'student',
-              name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+              role: (profile?.role as 'student' | 'admin') || (session.user.user_metadata?.role as 'student' | 'admin') || 'student',
+              name: profile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
             });
           }
           
           // Listen for auth state changes
-          const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+          const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             if (session?.user) {
+              const { data: profile } = await supabase.from('profiles').select('role, name').eq('id', session.user.id).single();
               setUser({
                 id: session.user.id,
                 email: session.user.email || '',
-                role: (session.user.user_metadata?.role as 'student' | 'admin') || 'student',
-                name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
+                role: (profile?.role as 'student' | 'admin') || (session.user.user_metadata?.role as 'student' | 'admin') || 'student',
+                name: profile?.name || session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'User',
               });
             } else {
               setUser(null);
@@ -83,14 +85,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (error) throw error;
         
         if (data.user) {
-          const profile: UserProfile = {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, name')
+            .eq('id', data.user.id)
+            .single();
+
+          const profileData: UserProfile = {
             id: data.user.id,
             email: data.user.email || '',
-            role: (data.user.user_metadata?.role as 'student' | 'admin') || 'student',
-            name: data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
+            role: (profile?.role as 'student' | 'admin') || (data.user.user_metadata?.role as 'student' | 'admin') || 'student',
+            name: profile?.name || data.user.user_metadata?.name || data.user.email?.split('@')[0] || 'User',
           };
-          setUser(profile);
-          return { success: true, role: profile.role };
+          setUser(profileData);
+          return { success: true, role: profileData.role };
         }
         return { success: false, error: 'User login data unavailable' };
       } else {

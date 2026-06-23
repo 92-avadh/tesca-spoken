@@ -29,7 +29,10 @@ function useCountdown() {
 
 export default function OfferBanner() {
   const pathname = usePathname();
-  const isLoginPage = pathname === '/login';
+  const isExcludedPage =
+    pathname === '/login' ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/student');
   const [scrolled, setScrolled] = useState(false);
   const [hasMounted, setHasMounted] = useState(false);
   const { hours, minutes, seconds } = useCountdown();
@@ -50,11 +53,11 @@ export default function OfferBanner() {
 
   useEffect(() => {
     if (!hasMounted) return;
-    const isVisible = !scrolled && !isLoginPage;
+    const isVisible = !scrolled && !isExcludedPage;
     document.documentElement.style.setProperty('--banner-height', isVisible ? '36px' : '0px');
-  }, [scrolled, hasMounted, isLoginPage]);
+  }, [scrolled, hasMounted, isExcludedPage]);
 
-  if (!hasMounted || isLoginPage) return null;
+  if (!hasMounted || isExcludedPage) return null;
 
   return (
     <div
