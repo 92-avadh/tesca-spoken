@@ -171,8 +171,8 @@ export default function LoginPage() {
           {/* Footer contact info */}
           <div className="text-[10px] text-primary-300 border-t border-white/5 pt-5 mt-6 relative z-10 flex justify-between items-center">
             <span>Have a problem? Contact us at</span>
-            <a href="mailto:hello@tescaspokenenglish.com" className="font-semibold text-secondary hover:underline">
-              hello@tescaspokenenglish.com
+            <a href="mailto:tescavisaconsultancy87@gmail.com" className="font-semibold text-secondary hover:underline">
+              tescavisaconsultancy87@gmail.com
             </a>
           </div>
         </div>

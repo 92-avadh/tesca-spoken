@@ -71,7 +71,7 @@ export default function OfferBanner() {
       {/* Text */}
       <span className="text-xs font-semibold sm:text-sm">
         🎉 Limited Time Offer — Up to{' '}
-        <strong className="underline underline-offset-2">35% OFF</strong> on all courses!
+        <strong className="underline underline-offset-2">50% OFF</strong> on all courses!
       </span>
 
       {/* Countdown */}
