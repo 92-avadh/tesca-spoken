@@ -1,0 +1,252 @@
+'use client';
+
+import { useState } from 'react';
+import { Search, Plus, Filter, Edit2, Trash2, Users, DollarSign, BookOpen, X, Award } from 'lucide-react';
+
+interface Course {
+  id: string;
+  title: string;
+  trainer: string;
+  category: string;
+  price: number;
+  studentsCount: number;
+  lessonsCount: number;
+}
+
+export default function AdminCoursesPage() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([
+    {
+      id: 'course-1',
+      title: 'Spoken English Mastery — Intermediate',
+      trainer: 'Sarah Jenkins',
+      category: 'Fluency & Pronunciation',
+      price: 29.0,
+      studentsCount: 654,
+      lessonsCount: 18,
+    },
+    {
+      id: 'course-2',
+      title: 'Business Communication & Interview Prep',
+      trainer: 'David Vance',
+      category: 'Professional Skills',
+      price: 49.0,
+      studentsCount: 382,
+      lessonsCount: 20,
+    },
+    {
+      id: 'course-3',
+      title: 'Vocabulary & Idioms Accelerator',
+      trainer: 'Emma Watson',
+      category: 'Vocabulary',
+      price: 19.0,
+      studentsCount: 384,
+      lessonsCount: 12,
+    },
+  ]);
+
+  const [newCourse, setNewCourse] = useState({
+    title: '',
+    trainer: 'Sarah Jenkins',
+    category: 'Fluency & Pronunciation',
+    price: 29,
+    lessonsCount: 10,
+  });
+
+  const handleAddCourse = (e: React.FormEvent) => {
+    e.preventDefault();
+    const created: Course = {
+      id: `course-${courses.length + 1}`,
+      title: newCourse.title,
+      trainer: newCourse.trainer,
+      category: newCourse.category,
+      price: Number(newCourse.price),
+      studentsCount: 0,
+      lessonsCount: Number(newCourse.lessonsCount),
+    };
+    setCourses([...courses, created]);
+    setNewCourse({ title: '', trainer: 'Sarah Jenkins', category: 'Fluency & Pronunciation', price: 29, lessonsCount: 10 });
+    setIsAdding(false);
+  };
+
+  const handleDeleteCourse = (id: string) => {
+    setCourses(courses.filter((c) => c.id !== id));
+  };
+
+  const filteredCourses = courses.filter((c) =>
+    c.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    c.trainer.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-gray-800 tracking-tight">Courses Management</h1>
+          <p className="text-xs text-gray-400 font-semibold mt-0.5">Configure course syllabi, pricing, and trainer assignments</p>
+        </div>
+
+        <button
+          onClick={() => setIsAdding(true)}
+          className="inline-flex items-center justify-center gap-1.5 px-5 py-3 bg-primary hover:bg-primary-600 text-white rounded-xl text-xs font-bold transition-all shadow-soft self-start sm:self-auto"
+        >
+          <Plus className="h-4 w-4" />
+          Create Course
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+        <div className="flex items-center gap-2 bg-white border border-gray-100 rounded-xl px-4 py-2.5 w-full md:w-[280px] shadow-soft">
+          <Search className="h-4 w-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search courses or trainers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1 bg-transparent text-xs text-gray-700 outline-none placeholder:text-gray-400"
+          />
+        </div>
+      </div>
+
+      {/* Add Course Modal */}
+      {isAdding && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-gray-100 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-scale-up">
+            <div className="flex justify-between items-center pb-4 border-b border-gray-50">
+              <h3 className="text-base font-bold text-gray-800">Create New Course</h3>
+              <button onClick={() => setIsAdding(false)} className="p-1 rounded-lg text-gray-400 hover:bg-gray-50">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleAddCourse} className="space-y-4 pt-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-500">Course Title</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Master Public Speaking"
+                  value={newCourse.title}
+                  onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs text-gray-800 focus:bg-white focus:border-primary outline-none"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-500">Trainer</label>
+                  <select
+                    value={newCourse.trainer}
+                    onChange={(e) => setNewCourse({ ...newCourse, trainer: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs text-gray-800 focus:bg-white focus:border-primary outline-none"
+                  >
+                    <option>Sarah Jenkins</option>
+                    <option>David Vance</option>
+                    <option>Emma Watson</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-500">Lessons Count</label>
+                  <input
+                    type="number"
+                    value={newCourse.lessonsCount}
+                    onChange={(e) => setNewCourse({ ...newCourse, lessonsCount: Number(e.target.value) })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs text-gray-800 focus:bg-white focus:border-primary outline-none"
+                    min="1"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-500">Price (USD)</label>
+                  <input
+                    type="number"
+                    value={newCourse.price}
+                    onChange={(e) => setNewCourse({ ...newCourse, price: Number(e.target.value) })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs text-gray-800 focus:bg-white focus:border-primary outline-none"
+                    min="0"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-500">Category</label>
+                  <select
+                    value={newCourse.category}
+                    onChange={(e) => setNewCourse({ ...newCourse, category: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-xs text-gray-800 focus:bg-white focus:border-primary outline-none"
+                  >
+                    <option>Fluency & Pronunciation</option>
+                    <option>Professional Skills</option>
+                    <option>Vocabulary</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex gap-3 justify-end pt-4 border-t border-gray-50">
+                <button
+                  type="button"
+                  onClick={() => setIsAdding(false)}
+                  className="px-4 py-2.5 rounded-xl border border-gray-150 text-gray-500 text-xs font-bold hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary-600 shadow-soft"
+                >
+                  Create Course
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Courses Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredCourses.map((course) => (
+          <div
+            key={course.id}
+            className="bg-white border border-gray-100 rounded-2xl p-5 shadow-soft hover:shadow-soft-lg transition-all duration-300 flex flex-col justify-between h-full space-y-4"
+          >
+            <div className="space-y-2">
+              <div className="flex justify-between items-start">
+                <span className="bg-primary-50 text-primary text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  {course.category}
+                </span>
+                <span className="text-base font-extrabold text-gray-800">${course.price.toFixed(2)}</span>
+              </div>
+              <h3 className="text-base font-bold text-gray-800 leading-snug">{course.title}</h3>
+              <p className="text-xs text-gray-400 font-semibold">Lead Trainer: {course.trainer}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border-t border-b border-gray-50 py-3.5 text-xs font-semibold text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-gray-400" />
+                <span>{course.studentsCount} Students</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <BookOpen className="h-4 w-4 text-gray-400" />
+                <span>{course.lessonsCount} Lessons</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 text-xs font-bold">
+              <button
+                onClick={() => handleDeleteCourse(course.id)}
+                className="inline-flex items-center justify-center p-2.5 rounded-xl border border-gray-100 hover:border-rose-100 hover:bg-rose-50 text-rose-600 transition-colors"
+                title="Delete Course"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+              <button className="flex-1 inline-flex items-center justify-center gap-1 px-4 py-2.5 rounded-xl border border-primary text-primary hover:bg-primary hover:text-white transition-all">
+                Edit Course
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
