@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, CreditCard, DollarSign, PhoneCall, TrendingUp, UserPlus, BookOpen } from 'lucide-react';
+import { Users, CreditCard, IndianRupee, PhoneCall, TrendingUp, UserPlus, BookOpen } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import AnalyticsChart from '@/components/dashboard/AnalyticsChart';
 import ProgressRing from '@/components/dashboard/ProgressRing';
@@ -23,11 +23,11 @@ export default function AdminDashboardHome() {
       const leadsList = await db.getLeads();
       const paymentsList = await db.getPayments();
 
-      const totalStudents = studentsList.length || 1420;
-      const pendingLeads = leadsList.filter((l: any) => l.status === 'new').length || 8;
+      const totalStudents = studentsList.length;
+      const pendingLeads = leadsList.filter((l: any) => l.status === 'new').length;
       
       const successfulPayments = paymentsList.filter((p: any) => p.status === 'success');
-      const totalRevenue = successfulPayments.reduce((acc: number, cur: any) => acc + Number(cur.amount), 0) || 28540;
+      const totalRevenue = successfulPayments.reduce((acc: number, cur: any) => acc + Number(cur.amount), 0);
 
       setStats({
         totalStudents,
@@ -62,7 +62,7 @@ export default function AdminDashboardHome() {
     {
       id: 'act-2',
       title: 'Payment Received',
-      description: 'Received $29.00 subscription payment from Priya K.',
+      description: 'Received ₹2,499.00 subscription payment from Priya K.',
       time: '45 mins ago',
       icon: CreditCard,
       status: 'info' as const,
@@ -111,10 +111,10 @@ export default function AdminDashboardHome() {
         />
         <StatCard
           label="Monthly Revenue"
-          value={"$" + stats.monthlyRevenue.toLocaleString()}
+          value={"₹" + stats.monthlyRevenue.toLocaleString('en-IN')}
           trend={{ value: 14.1, isPositive: true }}
           description="June revenue"
-          icon={DollarSign}
+          icon={IndianRupee}
           color="indigo"
         />
         <StatCard
@@ -133,10 +133,10 @@ export default function AdminDashboardHome() {
         <div className="lg:col-span-2 space-y-6">
           <AnalyticsChart
             title="Monthly Revenue Growth"
-            subtitle="Current year revenue vs. target forecast (USD)"
+            subtitle="Current year revenue vs. target forecast (INR)"
             data={monthlyRevenueData}
             type="bar"
-            valuePrefix="$"
+            valuePrefix="₹"
             color="primary"
           />
 

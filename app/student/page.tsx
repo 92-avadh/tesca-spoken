@@ -39,12 +39,7 @@ export default function StudentDashboardHome() {
     (lc) => lc.status === 'live' || lc.status === 'upcoming'
   );
 
-  const currentCourse = courses[0] || {
-    id: 'spoken-english-intermediate',
-    title: 'Spoken English Mastery — Intermediate',
-    trainer: 'Sarah Jenkins',
-    lessons_count: 18
-  };
+  const currentCourse = courses[0];
 
   // Mock Data
   const weeklyStudyHours = [
@@ -152,38 +147,50 @@ export default function StudentDashboardHome() {
           />
 
           {/* Current Course Spotlight */}
-          <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-soft flex flex-col md:flex-row items-center gap-6">
-            <div className="relative h-28 w-28 rounded-2xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
-              <Play className="h-10 w-10 text-secondary fill-current" />
-            </div>
-            <div className="flex-1 space-y-3 text-center md:text-left">
-              <span className="text-[10px] font-bold text-secondary bg-secondary-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                In Progress
-              </span>
-              <h3 className="text-lg font-bold text-gray-800">{currentCourse.title}</h3>
-              <p className="text-xs text-gray-400 font-medium">
-                Trainer: {currentCourse.trainer} | {currentCourse.lessons_count} Lessons
-              </p>
-              
-              {/* Progress bar */}
-              <div className="space-y-1.5">
-                <div className="flex justify-between text-xs font-semibold text-gray-500">
-                  <span>Progress</span>
-                  <span>14 of 18 lessons</span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: '77%' }} />
+          {currentCourse ? (
+            <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-soft flex flex-col md:flex-row items-center gap-6">
+              <div className="relative h-28 w-28 rounded-2xl bg-secondary-50 flex items-center justify-center flex-shrink-0">
+                <Play className="h-10 w-10 text-secondary fill-current" />
+              </div>
+              <div className="flex-1 space-y-3 text-center md:text-left">
+                <span className="text-[10px] font-bold text-secondary bg-secondary-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  In Progress
+                </span>
+                <h3 className="text-lg font-bold text-gray-800">{currentCourse.title}</h3>
+                <p className="text-xs text-gray-400 font-medium">
+                  Trainer: {currentCourse.trainer} | {currentCourse.lessons_count} Lessons
+                </p>
+                
+                {/* Progress bar */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-xs font-semibold text-gray-500">
+                    <span>Progress</span>
+                    <span>14 of 18 lessons</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: '77%' }} />
+                  </div>
                 </div>
               </div>
+              <Link
+                href="/student/courses"
+                className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-6 py-3 rounded-2xl bg-primary text-white text-xs font-bold hover:bg-primary-600 transition-all duration-300 hover:shadow-soft"
+              >
+                Resume Lesson
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
-            <Link
-              href="/student/courses"
-              className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-6 py-3 rounded-2xl bg-primary text-white text-xs font-bold hover:bg-primary-600 transition-all duration-300 hover:shadow-soft"
-            >
-              Resume Lesson
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
+          ) : (
+            <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-soft text-center space-y-3 flex flex-col items-center justify-center min-h-[160px]">
+              <div className="h-12 w-12 rounded-2xl bg-primary-50 text-primary flex items-center justify-center">
+                <BookOpen className="h-6 w-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-bold text-gray-800">No Enrolled Courses</h3>
+                <p className="text-xs text-gray-400 max-w-sm">You are not enrolled in any courses yet. Once you enroll, your active courses will appear here.</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right side: Progress Ring & Recent Activities */}

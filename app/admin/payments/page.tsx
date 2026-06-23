@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Download, CreditCard, DollarSign, ArrowUpRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Search, Download, CreditCard, IndianRupee, ArrowUpRight, CheckCircle2, AlertCircle } from 'lucide-react';
 import { db } from '@/lib/db';
 
 interface Transaction {
@@ -72,11 +72,11 @@ export default function AdminPaymentsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white border border-gray-100/80 rounded-2xl p-5 shadow-soft flex items-center gap-4">
           <div className="p-3.5 bg-primary-50 text-primary rounded-xl">
-            <DollarSign className="h-6 w-6" />
+            <IndianRupee className="h-6 w-6" />
           </div>
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Sales (MTD)</p>
-            <h3 className="text-xl font-extrabold text-gray-800 mt-0.5">$8,240.00</h3>
+            <h3 className="text-xl font-extrabold text-gray-800 mt-0.5">₹8,24,000.00</h3>
           </div>
         </div>
         <div className="bg-white border border-gray-100/80 rounded-2xl p-5 shadow-soft flex items-center gap-4">
@@ -142,7 +142,7 @@ export default function AdminPaymentsPage() {
                         <p className="text-[10px] text-gray-400 mt-0.5">{t.email}</p>
                       </div>
                     </td>
-                    <td className="p-4 sm:p-5 font-bold text-gray-800">${t.amount.toFixed(2)}</td>
+                    <td className="p-4 sm:p-5 font-bold text-gray-800">₹{t.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                     <td className="p-4 sm:p-5 text-gray-450">{t.date}</td>
                     <td className="p-4 sm:p-5 text-gray-400">{t.method}</td>
                     <td className="p-4 sm:p-5">

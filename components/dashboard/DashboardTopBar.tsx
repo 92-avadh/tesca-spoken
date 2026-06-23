@@ -1,6 +1,7 @@
 'use client';
 
-import { Search, Bell, Mail, Menu } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Search, Bell, Menu } from 'lucide-react';
 
 interface TopBarProps {
   role: 'student' | 'admin';
@@ -8,6 +9,35 @@ interface TopBarProps {
 }
 
 export default function DashboardTopBar({ role, onMenuToggle }: TopBarProps) {
+  const [notifOpen, setNotifOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setNotifOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Contextual mock notifications based on role
+  const notifications = role === 'admin' 
+    ? [
+        { id: 'n1', text: 'New student enrolled today.', time: '10 mins ago', unread: true },
+        { id: 'n2', text: 'Subscription payment of ₹2,499.00 received.', time: '45 mins ago', unread: true },
+        { id: 'n3', text: 'Vikram Singh registered as a new lead.', time: '2 hours ago', unread: false },
+      ]
+    : [
+        { id: 'n1', text: 'Live Class: "Fluency Practice" starts soon.', time: '15 mins', unread: true },
+        { id: 'n2', text: 'Lesson 5 study material has been unlocked.', time: '2 hours ago', unread: true },
+        { id: 'n3', text: 'Welcome to TESCA Spoken English!', time: '1 day ago', unread: false },
+      ];
+
+  const unreadCount = notifications.filter(n => n.unread).length;
+
   return (
     <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-gray-100">
       <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
@@ -40,14 +70,46 @@ export default function DashboardTopBar({ role, onMenuToggle }: TopBarProps) {
             <Search className="h-5 w-5" />
           </button>
 
-          <button className="relative p-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors">
-            <Mail className="h-[18px] w-[18px]" />
-          </button>
+          {/* Notifications Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setNotifOpen(!notifOpen)}
+              className="relative p-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors cursor-pointer"
+            >
+              <Bell className="h-[18px] w-[18px]" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-secondary ring-2 ring-white" />
+              )}
+            </button>
 
-          <button className="relative p-2.5 rounded-xl text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors">
-            <Bell className="h-[18px] w-[18px]" />
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-secondary ring-2 ring-white" />
-          </button>
+            {notifOpen && (
+              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-100 rounded-2xl shadow-soft-xl py-2 z-50 animate-fade-in">
+                <div className="px-4 py-2 border-b border-gray-50 flex items-center justify-between">
+                  <h4 className="text-xs font-extrabold text-gray-800 uppercase tracking-wider">Notifications</h4>
+                  {unreadCount > 0 && (
+                    <span className="text-[10px] font-bold text-secondary bg-secondary-50 px-2 py-0.5 rounded">
+                      {unreadCount} New
+                    </span>
+                  )}
+                </div>
+                <div className="max-h-64 overflow-y-auto divide-y divide-gray-50">
+                  {notifications.map((notif) => (
+                    <div key={notif.id} className="px-4 py-3 hover:bg-gray-50/50 transition-colors text-left">
+                      <div className="flex justify-between items-start gap-2">
+                        <p className={`text-xs ${notif.unread ? 'font-bold text-gray-800' : 'text-gray-600'}`}>
+                          {notif.text}
+                        </p>
+                        {notif.unread && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-secondary shrink-0 mt-1" />
+                        )}
+                      </div>
+                      <span className="text-[10px] text-gray-400 font-medium mt-1 block">{notif.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Divider */}
           <div className="hidden sm:block w-px h-8 bg-gray-100 mx-1" />

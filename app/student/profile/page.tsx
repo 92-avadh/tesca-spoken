@@ -287,7 +287,7 @@ export default function StudentProfilePage() {
                       Active Plan
                     </span>
                     <h4 className="text-base font-bold text-gray-800">Spoken English Pro — Unlimited Access</h4>
-                    <p className="text-xs text-gray-400 font-medium">Next billing date: July 10, 2026 ($29.00/month)</p>
+                    <p className="text-xs text-gray-400 font-medium">Next billing date: July 10, 2026 (₹2,499.00/month)</p>
                   </div>
 
                   <button className="text-xs font-bold text-primary hover:text-primary-600 border border-primary/20 hover:border-primary bg-white px-4 py-2.5 rounded-xl transition-all shadow-sm">
@@ -306,7 +306,7 @@ export default function StudentProfilePage() {
                       <p className="text-gray-400 text-[10px]">June 10, 2026</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-gray-700 font-bold">$29.00</span>
+                      <span className="text-gray-700 font-bold">₹2,499.00</span>
                       <button className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider">Download</button>
                     </div>
                   </div>
@@ -316,7 +316,7 @@ export default function StudentProfilePage() {
                       <p className="text-gray-400 text-[10px]">May 10, 2026</p>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-gray-700 font-bold">$29.00</span>
+                      <span className="text-gray-700 font-bold">₹2,499.00</span>
                       <button className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider">Download</button>
                     </div>
                   </div>
