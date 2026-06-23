@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Trash2, ShieldAlert, Star, CheckCircle, EyeOff, X } from 'lucide-react';
+import { db } from '@/lib/db';
 
 interface Testimonial {
   id: string;
@@ -16,35 +17,23 @@ interface Testimonial {
 export default function AdminTestimonialsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [testimonials, setTestimonials] = useState<Testimonial[]>([
-    {
-      id: 'test-1',
-      name: 'Rohan Sharma',
-      course: 'Spoken English Mastery',
-      rating: 5,
-      message: 'I gained so much confidence! The trainers were amazing and really focused on conversation practices.',
-      status: 'approved',
-      date: 'June 18, 2026',
-    },
-    {
-      id: 'test-2',
-      name: 'Pooja Patel',
-      course: 'Business Communication',
-      rating: 5,
-      message: 'The interview preparation sections were a game changer. I cracked my interview at a top MNC!',
-      status: 'approved',
-      date: 'June 15, 2026',
-    },
-    {
-      id: 'test-3',
-      name: 'Amit Verma',
-      course: 'Vocabulary Accelerator',
-      rating: 4,
-      message: 'Great course materials and worksheets. My vocabulary improved significantly.',
-      status: 'hidden',
-      date: 'June 10, 2026',
-    },
-  ]);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadTestimonials = async () => {
+    try {
+      const data = await db.getTestimonials();
+      setTestimonials(data);
+    } catch (err) {
+      console.error('Failed to load testimonials', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTestimonials();
+  }, []);
 
   const [newTestimonial, setNewTestimonial] = useState({
     name: '',
@@ -53,10 +42,10 @@ export default function AdminTestimonialsPage() {
     message: '',
   });
 
-  const handleAddTestimonial = (e: React.FormEvent) => {
+  const handleAddTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
     const created: Testimonial = {
-      id: `test-${testimonials.length + 1}`,
+      id: `test-${Date.now()}`,
       name: newTestimonial.name,
       course: newTestimonial.course,
       rating: newTestimonial.rating,
@@ -64,21 +53,22 @@ export default function AdminTestimonialsPage() {
       status: 'approved',
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
     };
-    setTestimonials([created, ...testimonials]);
+
+    await db.createTestimonial(created);
     setNewTestimonial({ name: '', course: 'Spoken English Mastery', rating: 5, message: '' });
     setIsAdding(false);
+    loadTestimonials();
   };
 
-  const handleDelete = (id: string) => {
-    setTestimonials(testimonials.filter((t) => t.id !== id));
+  const handleDelete = async (id: string) => {
+    await db.deleteTestimonial(id);
+    loadTestimonials();
   };
 
-  const handleToggleStatus = (id: string, currentStatus: 'approved' | 'hidden') => {
-    setTestimonials(
-      testimonials.map((t) =>
-        t.id === id ? { ...t, status: currentStatus === 'approved' ? 'hidden' : 'approved' } : t
-      )
-    );
+  const handleToggleStatus = async (id: string, currentStatus: 'approved' | 'hidden') => {
+    const nextStatus = currentStatus === 'approved' ? 'hidden' : 'approved';
+    await db.updateTestimonialStatus(id, nextStatus);
+    loadTestimonials();
   };
 
   const filteredTestimonials = testimonials.filter((t) =>

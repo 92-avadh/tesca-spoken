@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Download, CreditCard, DollarSign, ArrowUpRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { db } from '@/lib/db';
 
 interface Transaction {
   id: string;
@@ -15,54 +16,26 @@ interface Transaction {
 
 export default function AdminPaymentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const transactions: Transaction[] = [
-    {
-      id: 'TXN-9021',
-      student: 'Aarav Patel',
-      email: 'aarav.patel@gmail.com',
-      amount: 29.0,
-      date: 'June 23, 2026',
-      method: 'Visa •••• 4242',
-      status: 'success',
-    },
-    {
-      id: 'TXN-9020',
-      student: 'Neha Sharma',
-      email: 'neha.sharma@yahoo.com',
-      amount: 49.0,
-      date: 'June 22, 2026',
-      method: 'Mastercard •••• 8812',
-      status: 'success',
-    },
-    {
-      id: 'TXN-9019',
-      student: 'Rahul Kapoor',
-      email: 'rahul.k@gmail.com',
-      amount: 29.0,
-      date: 'June 20, 2026',
-      method: 'Visa •••• 1109',
-      status: 'failed',
-    },
-    {
-      id: 'TXN-9018',
-      student: 'Priya Nair',
-      email: 'priya.nair@outlook.com',
-      amount: 29.0,
-      date: 'June 18, 2026',
-      method: 'UPI Transfer',
-      status: 'success',
-    },
-    {
-      id: 'TXN-9017',
-      student: 'Devendra Patil',
-      email: 'dev.patil@gmail.com',
-      amount: 19.0,
-      date: 'June 15, 2026',
-      method: 'Visa •••• 9901',
-      status: 'refunded',
-    },
-  ];
+  useEffect(() => {
+    async function load() {
+      const data = await db.getPayments();
+      const mapped = data.map((t: any) => ({
+        id: t.id,
+        student: t.student_name,
+        email: t.email,
+        amount: Number(t.amount),
+        date: t.date,
+        method: t.method,
+        status: t.status as any,
+      }));
+      setTransactions(mapped);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const filteredTxns = transactions.filter((t) =>
     t.student.toLowerCase().includes(searchQuery.toLowerCase()) || 

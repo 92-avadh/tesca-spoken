@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, Video, Clock, User, ArrowUpRight, Play, AlertCircle } from 'lucide-react';
+import { db } from '@/lib/db';
 
 interface LiveClass {
   id: string;
@@ -16,53 +17,27 @@ interface LiveClass {
 
 export default function StudentLiveClassesPage() {
   const [activeFilter, setActiveFilter] = useState<'upcoming' | 'completed'>('upcoming');
+  const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const liveClasses: LiveClass[] = [
-    {
-      id: 'lc-1',
-      topic: 'Vocabulary Blast: Idioms for Social Gatherings',
-      trainer: 'Sarah Jenkins',
-      dateTime: 'Today, 4:00 PM (IST)',
-      duration: '60 mins',
-      status: 'live',
-      joinUrl: 'https://meet.google.com/abc-defg-hij',
-    },
-    {
-      id: 'lc-2',
-      topic: 'Speaking Challenge: Group Discussion Practice',
-      trainer: 'David Vance',
-      dateTime: 'Tomorrow, 11:30 AM (IST)',
-      duration: '45 mins',
-      status: 'upcoming',
-      joinUrl: 'https://meet.google.com/abc-defg-hij',
-    },
-    {
-      id: 'lc-3',
-      topic: 'Grammar Essentials: Perfecting the Past Tense',
-      trainer: 'Emma Watson',
-      dateTime: 'June 25, 2:00 PM (IST)',
-      duration: '60 mins',
-      status: 'upcoming',
-    },
-    {
-      id: 'lc-4',
-      topic: 'Pronunciation Lab: Hard & Soft Consonant Sounds',
-      trainer: 'Sarah Jenkins',
-      dateTime: 'June 21, 4:00 PM (IST)',
-      duration: '60 mins',
-      status: 'completed',
-      recordingUrl: '#',
-    },
-    {
-      id: 'lc-5',
-      topic: 'Introductory Speaking Session: Ice Breaking',
-      trainer: 'Emma Watson',
-      dateTime: 'June 18, 10:00 AM (IST)',
-      duration: '45 mins',
-      status: 'completed',
-      recordingUrl: '#',
-    },
-  ];
+  useEffect(() => {
+    async function load() {
+      const data = await db.getLiveClasses();
+      const mapped = data.map((lc: any) => ({
+        id: lc.id,
+        topic: lc.topic,
+        trainer: lc.trainer,
+        dateTime: lc.date_time,
+        duration: lc.duration,
+        status: lc.status as 'live' | 'upcoming' | 'completed',
+        joinUrl: lc.join_url,
+        recordingUrl: lc.recording_url,
+      }));
+      setLiveClasses(mapped);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const filteredClasses = liveClasses.filter((lc) => {
     if (activeFilter === 'upcoming') {

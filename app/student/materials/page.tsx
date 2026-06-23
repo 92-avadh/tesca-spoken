@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, Download, Search, Headphones, BookOpen, FileCheck } from 'lucide-react';
+import { db } from '@/lib/db';
 
 interface Material {
   id: string;
@@ -16,54 +17,26 @@ interface Material {
 export default function StudentMaterialsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const materials: Material[] = [
-    {
-      id: 'mat-1',
-      name: '100 Common Idioms for Daily Conversation',
-      category: 'vocabulary',
-      format: 'PDF',
-      size: '1.2 MB',
-      downloadUrl: '#',
-      addedDate: 'June 20, 2026',
-    },
-    {
-      id: 'mat-2',
-      name: 'Irregular Verbs Cheat Sheet & Quiz',
-      category: 'grammar',
-      format: 'PDF',
-      size: '850 KB',
-      downloadUrl: '#',
-      addedDate: 'June 18, 2026',
-    },
-    {
-      id: 'mat-3',
-      name: 'Daily Pronunciation Practice Audio (Lesson 3)',
-      category: 'speaking',
-      format: 'MP3',
-      size: '14.5 MB',
-      downloadUrl: '#',
-      addedDate: 'June 15, 2026',
-    },
-    {
-      id: 'mat-4',
-      name: 'Intermediate Conversation Starters Workbook',
-      category: 'speaking',
-      format: 'PDF',
-      size: '3.4 MB',
-      downloadUrl: '#',
-      addedDate: 'June 10, 2026',
-    },
-    {
-      id: 'mat-5',
-      name: 'Present Perfect vs Past Simple Exercises',
-      category: 'worksheet',
-      format: 'DOCX',
-      size: '220 KB',
-      downloadUrl: '#',
-      addedDate: 'June 05, 2026',
-    },
-  ];
+  useEffect(() => {
+    async function load() {
+      const data = await db.getStudyMaterials();
+      const mapped = data.map((mat: any) => ({
+        id: mat.id,
+        name: mat.name,
+        category: mat.category as any,
+        format: mat.format as any,
+        size: mat.size,
+        downloadUrl: mat.download_url,
+        addedDate: mat.added_date,
+      }));
+      setMaterials(mapped);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const categories = [
     { value: 'all', label: 'All Materials' },

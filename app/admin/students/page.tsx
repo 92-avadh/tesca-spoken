@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, UserPlus, Filter, MoreVertical, Edit2, Trash2, ShieldAlert, Check, X } from 'lucide-react';
+import { db } from '@/lib/db';
 
 interface Student {
   id: string;
@@ -15,40 +16,17 @@ interface Student {
 export default function AdminStudentsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended' | 'pending'>('all');
-  const [students, setStudents] = useState<Student[]>([
-    {
-      id: 'stud-1',
-      name: 'Aarav Patel',
-      email: 'aarav.patel@gmail.com',
-      course: 'Spoken English Mastery',
-      joinedDate: 'May 10, 2026',
-      status: 'active',
-    },
-    {
-      id: 'stud-2',
-      name: 'Neha Sharma',
-      email: 'neha.sharma@yahoo.com',
-      course: 'Business Communication',
-      joinedDate: 'June 02, 2026',
-      status: 'active',
-    },
-    {
-      id: 'stud-3',
-      name: 'Rohit Verma',
-      email: 'rohit.verma@gmail.com',
-      course: 'Vocabulary Accelerator',
-      joinedDate: 'June 15, 2026',
-      status: 'pending',
-    },
-    {
-      id: 'stud-4',
-      name: 'Priya Nair',
-      email: 'priya.nair@outlook.com',
-      course: 'Spoken English Mastery',
-      joinedDate: 'April 20, 2026',
-      status: 'suspended',
-    },
-  ]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const data = await db.getStudents();
+      setStudents(data as any);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const [isAdding, setIsAdding] = useState(false);
   const [newStudent, setNewStudent] = useState({ name: '', email: '', course: 'Spoken English Mastery' });
@@ -61,22 +39,26 @@ export default function AdminStudentsPage() {
     return matchesQuery && matchesStatus;
   });
 
-  const handleAddStudent = (e: React.FormEvent) => {
+  const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    const created: Student = {
-      id: `stud-${students.length + 1}`,
+    const mockId = `stud-${students.length + 1}`;
+    const newStudentObj = {
+      id: mockId,
       name: newStudent.name,
       email: newStudent.email,
       course: newStudent.course,
       joinedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-      status: 'active',
+      status: 'active' as const,
     };
-    setStudents([created, ...students]);
+    
+    await db.createStudentProfile(newStudentObj);
+    setStudents([newStudentObj, ...students]);
     setNewStudent({ name: '', email: '', course: 'Spoken English Mastery' });
     setIsAdding(false);
   };
 
-  const handleDeleteStudent = (id: string) => {
+  const handleDeleteStudent = async (id: string) => {
+    await db.deleteStudentProfile(id);
     setStudents(students.filter(s => s.id !== id));
   };
 

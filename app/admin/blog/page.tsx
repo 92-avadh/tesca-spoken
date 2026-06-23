@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Trash2, Eye, EyeOff, Edit, X } from 'lucide-react';
+import { db } from '@/lib/db';
 
 interface BlogPost {
   id: string;
@@ -15,32 +16,31 @@ interface BlogPost {
 export default function AdminBlogPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [posts, setPosts] = useState<BlogPost[]>([
-    {
-      id: 'post-1',
-      title: '5 Common Grammar Mistakes Spoken English Learners Make',
-      category: 'Grammar Tips',
-      author: 'Sarah Jenkins',
-      publishDate: 'June 20, 2026',
-      status: 'published',
-    },
-    {
-      id: 'post-2',
-      title: 'How to Crack Your Next Job Interview: Ultimate Guide',
-      category: 'Career Growth',
-      author: 'David Vance',
-      publishDate: 'June 15, 2026',
-      status: 'published',
-    },
-    {
-      id: 'post-3',
-      title: '10 Idioms that Will Make You Sound Like a Native Speaker',
-      category: 'Vocabulary',
-      author: 'Emma Watson',
-      publishDate: 'June 10, 2026',
-      status: 'draft',
-    },
-  ]);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadPosts = async () => {
+    try {
+      const data = await db.getBlogPosts();
+      const mapped = (data || []).map((p: any) => ({
+        id: p.id,
+        title: p.title,
+        category: p.category,
+        author: p.author,
+        publishDate: p.publish_date || p.publishDate || 'June 20, 2026',
+        status: p.status
+      }));
+      setPosts(mapped);
+    } catch (err) {
+      console.error('Failed to load blog posts', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPosts();
+  }, []);
 
   const [newPost, setNewPost] = useState({
     title: '',
@@ -48,31 +48,31 @@ export default function AdminBlogPage() {
     author: 'Sarah Jenkins',
   });
 
-  const handleAddPost = (e: React.FormEvent) => {
+  const handleAddPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    const created: BlogPost = {
-      id: `post-${posts.length + 1}`,
+    const created = {
+      id: `post-${Date.now()}`,
       title: newPost.title,
       category: newPost.category,
       author: newPost.author,
-      publishDate: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-      status: 'draft',
+      publish_date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+      status: 'draft' as const,
     };
-    setPosts([created, ...posts]);
+    await db.createBlogPost(created);
     setNewPost({ title: '', category: 'Grammar Tips', author: 'Sarah Jenkins' });
     setIsAdding(false);
+    loadPosts();
   };
 
-  const handleDelete = (id: string) => {
-    setPosts(posts.filter((p) => p.id !== id));
+  const handleDelete = async (id: string) => {
+    await db.deleteBlogPost(id);
+    loadPosts();
   };
 
-  const handleToggleStatus = (id: string, currentStatus: 'published' | 'draft') => {
-    setPosts(
-      posts.map((p) =>
-        p.id === id ? { ...p, status: currentStatus === 'published' ? 'draft' : 'published' } : p
-      )
-    );
+  const handleToggleStatus = async (id: string, currentStatus: 'published' | 'draft') => {
+    const nextStatus = currentStatus === 'published' ? 'draft' : 'published';
+    await db.updateBlogPostStatus(id, nextStatus);
+    loadPosts();
   };
 
   const filteredPosts = posts.filter((p) =>

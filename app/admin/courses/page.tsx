@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Filter, Edit2, Trash2, Users, DollarSign, BookOpen, X, Award } from 'lucide-react';
+import { db } from '@/lib/db';
 
 interface Course {
   id: string;
@@ -16,35 +17,26 @@ interface Course {
 export default function AdminCoursesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([
-    {
-      id: 'course-1',
-      title: 'Spoken English Mastery — Intermediate',
-      trainer: 'Sarah Jenkins',
-      category: 'Fluency & Pronunciation',
-      price: 29.0,
-      studentsCount: 654,
-      lessonsCount: 18,
-    },
-    {
-      id: 'course-2',
-      title: 'Business Communication & Interview Prep',
-      trainer: 'David Vance',
-      category: 'Professional Skills',
-      price: 49.0,
-      studentsCount: 382,
-      lessonsCount: 20,
-    },
-    {
-      id: 'course-3',
-      title: 'Vocabulary & Idioms Accelerator',
-      trainer: 'Emma Watson',
-      category: 'Vocabulary',
-      price: 19.0,
-      studentsCount: 384,
-      lessonsCount: 12,
-    },
-  ]);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      const data = await db.getCourses();
+      const mapped = data.map((c: any) => ({
+        id: c.id,
+        title: c.title,
+        trainer: c.trainer,
+        category: c.category,
+        price: Number(c.price),
+        studentsCount: c.students_count || 0,
+        lessonsCount: c.lessons_count || 12,
+      }));
+      setCourses(mapped);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const [newCourse, setNewCourse] = useState({
     title: '',
@@ -54,23 +46,36 @@ export default function AdminCoursesPage() {
     lessonsCount: 10,
   });
 
-  const handleAddCourse = (e: React.FormEvent) => {
+  const handleAddCourse = async (e: React.FormEvent) => {
     e.preventDefault();
-    const created: Course = {
+    const createdObj = {
       id: `course-${courses.length + 1}`,
       title: newCourse.title,
       trainer: newCourse.trainer,
       category: newCourse.category,
       price: Number(newCourse.price),
-      studentsCount: 0,
-      lessonsCount: Number(newCourse.lessonsCount),
+      students_count: 0,
+      lessons_count: Number(newCourse.lessonsCount),
     };
-    setCourses([...courses, created]);
+    
+    await db.createCourse(createdObj);
+    
+    setCourses([...courses, {
+      id: createdObj.id,
+      title: createdObj.title,
+      trainer: createdObj.trainer,
+      category: createdObj.category,
+      price: createdObj.price,
+      studentsCount: createdObj.students_count,
+      lessonsCount: createdObj.lessons_count,
+    }]);
+    
     setNewCourse({ title: '', trainer: 'Sarah Jenkins', category: 'Fluency & Pronunciation', price: 29, lessonsCount: 10 });
     setIsAdding(false);
   };
 
-  const handleDeleteCourse = (id: string) => {
+  const handleDeleteCourse = async (id: string) => {
+    await db.deleteCourse(id);
     setCourses(courses.filter((c) => c.id !== id));
   };
 

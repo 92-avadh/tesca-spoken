@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Save, CheckCircle, HelpCircle } from 'lucide-react';
 
 export default function AdminSettingsPage() {
@@ -15,8 +15,20 @@ export default function AdminSettingsPage() {
     enableFreeTest: true,
   });
 
+  useEffect(() => {
+    const saved = localStorage.getItem('tesca_school_settings');
+    if (saved) {
+      try {
+        setSchoolSettings(JSON.parse(saved));
+      } catch (err) {
+        console.error('Failed to parse saved settings', err);
+      }
+    }
+  }, []);
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    localStorage.setItem('tesca_school_settings', JSON.stringify(schoolSettings));
     setSaveSuccess(true);
     setTimeout(() => {
       setSaveSuccess(false);

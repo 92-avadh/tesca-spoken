@@ -1,13 +1,51 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { BookOpen, Clock, Award, Calendar, Video, ArrowRight, Play } from 'lucide-react';
 import StatCard from '@/components/dashboard/StatCard';
 import AnalyticsChart from '@/components/dashboard/AnalyticsChart';
 import ProgressRing from '@/components/dashboard/ProgressRing';
 import ActivityList from '@/components/dashboard/ActivityList';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
+import { db } from '@/lib/db';
 
 export default function StudentDashboardHome() {
+  const { user } = useAuth();
+  const [courses, setCourses] = useState<any[]>([]);
+  const [liveClasses, setLiveClasses] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const [cData, lData] = await Promise.all([
+          db.getCourses(),
+          db.getLiveClasses()
+        ]);
+        setCourses(cData || []);
+        setLiveClasses(lData || []);
+      } catch (err) {
+        console.error('Failed to load student home data', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  // Find next class from liveClasses
+  const nextClass = liveClasses.find(
+    (lc) => lc.status === 'live' || lc.status === 'upcoming'
+  );
+
+  const currentCourse = courses[0] || {
+    id: 'spoken-english-intermediate',
+    title: 'Spoken English Mastery — Intermediate',
+    trainer: 'Sarah Jenkins',
+    lessons_count: 18
+  };
+
   // Mock Data
   const weeklyStudyHours = [
     { label: 'Mon', value: 1.5, secondaryValue: 2.0 },
@@ -56,10 +94,10 @@ export default function StudentDashboardHome() {
             🔥 12 Day Study Streak!
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            Welcome back, Aarav!
+            Welcome back, {user?.name || 'Aarav'}!
           </h1>
           <p className="text-sm text-primary-100 font-medium">
-            You're making amazing progress. You have 1 live class scheduled for today and 2 pending assignments. Keep it up!
+            You're making amazing progress. {nextClass ? `Your next class "${nextClass.topic}" is scheduled soon!` : 'No live classes scheduled for today. Keep it up!'}
           </p>
         </div>
       </div>
@@ -92,8 +130,8 @@ export default function StudentDashboardHome() {
         />
         <StatCard
           label="Next Live Class"
-          value="In 2 hours"
-          description="Today at 4:00 PM"
+          value={nextClass ? (nextClass.status === 'live' ? 'Live Now' : 'Scheduled') : 'No Classes'}
+          description={nextClass ? `${nextClass.topic.substring(0, 24)}${nextClass.topic.length > 24 ? '...' : ''}` : 'Check back later'}
           icon={Calendar}
           color="accent"
         />
@@ -122,9 +160,9 @@ export default function StudentDashboardHome() {
               <span className="text-[10px] font-bold text-secondary bg-secondary-50 px-2.5 py-1 rounded-full uppercase tracking-wider">
                 In Progress
               </span>
-              <h3 className="text-lg font-bold text-gray-800">Spoken English Mastery — Intermediate</h3>
+              <h3 className="text-lg font-bold text-gray-800">{currentCourse.title}</h3>
               <p className="text-xs text-gray-400 font-medium">
-                Up Next: Lesson 5 — Understanding Modal Verbs (Can, Could, Should, Would)
+                Trainer: {currentCourse.trainer} | {currentCourse.lessons_count} Lessons
               </p>
               
               {/* Progress bar */}

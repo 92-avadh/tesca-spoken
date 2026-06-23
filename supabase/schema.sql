@@ -1,0 +1,223 @@
+-- 1. Create User Roles Type
+CREATE TYPE user_role AS ENUM ('student', 'admin');
+
+-- 2. Create User Profiles Table
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  role user_role NOT NULL DEFAULT 'student',
+  name TEXT,
+  level TEXT DEFAULT 'Intermediate (B1)',
+  phone TEXT,
+  location TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read access to profiles" ON profiles
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow individual write access to own profile" ON profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+-- 3. Create Courses Table
+CREATE TABLE IF NOT EXISTS courses (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  trainer TEXT NOT NULL,
+  category TEXT NOT NULL,
+  price NUMERIC(10, 2) NOT NULL,
+  lessons_count INTEGER NOT NULL,
+  students_count INTEGER DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to courses" ON courses FOR SELECT USING (true);
+CREATE POLICY "Allow full admin control on courses" ON courses FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- 4. Create Enrollments Table (linking students to courses)
+CREATE TABLE IF NOT EXISTS enrollments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  student_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
+  course_id TEXT REFERENCES courses(id) ON DELETE CASCADE NOT NULL,
+  progress INTEGER DEFAULT 0 NOT NULL,
+  completed_lessons INTEGER DEFAULT 0 NOT NULL,
+  last_active TEXT DEFAULT '2 hours ago',
+  status TEXT DEFAULT 'active',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
+  UNIQUE(student_id, course_id)
+);
+
+ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow users to view own enrollments" ON enrollments FOR SELECT USING (
+  auth.uid() = student_id OR
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+CREATE POLICY "Allow users to modify own enrollments" ON enrollments FOR ALL USING (
+  auth.uid() = student_id OR
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- 5. Create Live Classes Table
+CREATE TABLE IF NOT EXISTS live_classes (
+  id TEXT PRIMARY KEY,
+  topic TEXT NOT NULL,
+  trainer TEXT NOT NULL,
+  date_time TEXT NOT NULL,
+  duration TEXT NOT NULL,
+  status TEXT NOT NULL, -- 'live', 'upcoming', 'completed'
+  join_url TEXT,
+  recording_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE live_classes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to live classes" ON live_classes FOR SELECT USING (true);
+CREATE POLICY "Allow full admin control on live classes" ON live_classes FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- 6. Create Study Materials Table
+CREATE TABLE IF NOT EXISTS study_materials (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  category TEXT NOT NULL, -- 'grammar', 'vocabulary', 'speaking', 'worksheet'
+  format TEXT NOT NULL, -- 'PDF', 'MP3', 'DOCX'
+  size TEXT NOT NULL,
+  download_url TEXT NOT NULL,
+  added_date TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE study_materials ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow read access to authenticated profiles" ON study_materials FOR SELECT USING (auth.uid() IS NOT NULL);
+CREATE POLICY "Allow full admin control on study materials" ON study_materials FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- 7. Create Payments Table
+CREATE TABLE IF NOT EXISTS payments (
+  id TEXT PRIMARY KEY,
+  student_name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  amount NUMERIC(10, 2) NOT NULL,
+  date TEXT NOT NULL,
+  method TEXT NOT NULL,
+  status TEXT NOT NULL, -- 'success', 'failed', 'refunded'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow view access to admins" ON payments FOR SELECT USING (
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- 8. Create Leads Table
+CREATE TABLE IF NOT EXISTS leads (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  email TEXT,
+  notes TEXT,
+  status TEXT NOT NULL, -- 'new', 'contacted', 'converted'
+  date_added TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE leads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow admin access to leads" ON leads FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- 9. Create Testimonials Table
+CREATE TABLE IF NOT EXISTS testimonials (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  course TEXT NOT NULL,
+  rating INTEGER NOT NULL,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL, -- 'approved', 'hidden'
+  date TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE testimonials ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to approved testimonials" ON testimonials FOR SELECT USING (status = 'approved');
+CREATE POLICY "Allow admins full access to testimonials" ON testimonials FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- 10. Create Blog Posts Table
+CREATE TABLE IF NOT EXISTS blog_posts (
+  id TEXT PRIMARY KEY,
+  title TEXT NOT NULL,
+  category TEXT NOT NULL,
+  author TEXT NOT NULL,
+  publish_date TEXT NOT NULL,
+  status TEXT NOT NULL, -- 'published', 'draft'
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
+);
+
+ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read access to published posts" ON blog_posts FOR SELECT USING (status = 'published');
+CREATE POLICY "Allow admins full access to blog posts" ON blog_posts FOR ALL USING (
+  EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+);
+
+-- ═══════════════════════════════════════════════════════════
+-- Seed Initial Data
+-- ═══════════════════════════════════════════════════════════
+
+INSERT INTO courses (id, title, trainer, category, price, lessons_count, students_count) VALUES
+('spoken-english-intermediate', 'Spoken English Mastery — Intermediate', 'Sarah Jenkins', 'Fluency & Pronunciation', 29.00, 18, 654),
+('business-communication', 'Business Communication & Interview Prep', 'David Vance', 'Professional Skills', 49.00, 20, 382),
+('vocabulary-accelerator', 'Vocabulary & Idioms Accelerator', 'Emma Watson', 'Vocabulary', 19.00, 12, 384)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO live_classes (id, topic, trainer, date_time, duration, status, join_url, recording_url) VALUES
+('lc-1', 'Vocabulary Blast: Idioms for Social Gatherings', 'Sarah Jenkins', 'Today, 4:00 PM (IST)', '60 mins', 'live', 'https://meet.google.com/abc-defg-hij', NULL),
+('lc-2', 'Speaking Challenge: Group Discussion Practice', 'David Vance', 'Tomorrow, 11:30 AM (IST)', '45 mins', 'upcoming', 'https://meet.google.com/abc-defg-hij', NULL),
+('lc-3', 'Grammar Essentials: Perfecting the Past Tense', 'Emma Watson', 'June 25, 2:00 PM (IST)', '60 mins', 'upcoming', NULL, NULL),
+('lc-4', 'Pronunciation Lab: Hard & Soft Consonant Sounds', 'Sarah Jenkins', 'June 21, 4:00 PM (IST)', '60 mins', 'completed', NULL, '#'),
+('lc-5', 'Introductory Speaking Session: Ice Breaking', 'Emma Watson', 'June 18, 10:00 AM (IST)', '45 mins', 'completed', NULL, '#')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO study_materials (id, name, category, format, size, download_url, added_date) VALUES
+('mat-1', '100 Common Idioms for Daily Conversation', 'vocabulary', 'PDF', '1.2 MB', '#', 'June 20, 2026'),
+('mat-2', 'Irregular Verbs Cheat Sheet & Quiz', 'grammar', 'PDF', '850 KB', '#', 'June 18, 2026'),
+('mat-3', 'Daily Pronunciation Practice Audio (Lesson 3)', 'speaking', 'MP3', '14.5 MB', '#', 'June 15, 2026'),
+('mat-4', 'Intermediate Conversation Starters Workbook', 'speaking', 'PDF', '3.4 MB', '#', 'June 10, 2026'),
+('mat-5', 'Present Perfect vs Past Simple Exercises', 'worksheet', 'DOCX', '220 KB', '#', 'June 05, 2026')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO payments (id, student_name, email, amount, date, method, status) VALUES
+('TXN-9021', 'Aarav Patel', 'aarav.patel@gmail.com', 29.00, 'June 23, 2026', 'Visa •••• 4242', 'success'),
+('TXN-9020', 'Neha Sharma', 'neha.sharma@yahoo.com', 49.00, 'June 22, 2026', 'Mastercard •••• 8812', 'success'),
+('TXN-9019', 'Rahul Kapoor', 'rahul.k@gmail.com', 29.00, 'June 20, 2026', 'Visa •••• 1109', 'failed'),
+('TXN-9018', 'Priya Nair', 'priya.nair@outlook.com', 29.00, 'June 18, 2026', 'UPI Transfer', 'success'),
+('TXN-9017', 'Devendra Patil', 'dev.patil@gmail.com', 19.00, 'June 15, 2026', 'Visa •••• 9901', 'refunded')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO leads (id, name, phone, email, notes, status, date_added) VALUES
+('lead-1', 'Vikram Singh', '+91 91234 56789', 'vikram.singh@gmail.com', 'Interested in the Spoken English Mastery course. Prefers morning batches.', 'new', 'June 23, 2026'),
+('lead-2', 'Anjali Sharma', '+91 98123 45670', 'anjali.s@yahoo.com', 'Wants to improve business vocabulary for upcoming job interviews.', 'contacted', 'June 22, 2026'),
+('lead-3', 'Suresh Patel', '+91 99000 88812', 'suresh.patel@gmail.com', 'Registered for a free level assessment. Waiting for callback.', 'new', 'June 21, 2026'),
+('lead-4', 'Meera Deshmukh', '+91 98222 33344', 'meera.d@gmail.com', 'Converted from lead to enrolled student today!', 'converted', 'June 18, 2026')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO testimonials (id, name, course, rating, message, status, date) VALUES
+('test-1', 'Rohan Sharma', 'Spoken English Mastery', 5, 'I gained so much confidence! The trainers were amazing and really focused on conversation practices.', 'approved', 'June 18, 2026'),
+('test-2', 'Pooja Patel', 'Business Communication', 5, 'The interview preparation sections were a game changer. I cracked my interview at a top MNC!', 'approved', 'June 15, 2026'),
+('test-3', 'Amit Verma', 'Vocabulary Accelerator', 4, 'Great course materials and worksheets. My vocabulary improved significantly.', 'hidden', 'June 10, 2026')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO blog_posts (id, title, category, author, publish_date, status) VALUES
+('post-1', '5 Common Grammar Mistakes Spoken English Learners Make', 'Grammar Tips', 'Sarah Jenkins', 'June 20, 2026', 'published'),
+('post-2', 'How to Crack Your Next Job Interview: Ultimate Guide', 'Career Growth', 'David Vance', 'June 15, 2026', 'published'),
+('post-3', '10 Idioms that Will Make You Sound Like a Native Speaker', 'Vocabulary', 'Emma Watson', 'June 10, 2026', 'draft')
+ON CONFLICT (id) DO NOTHING;

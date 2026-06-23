@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { User, Shield, CreditCard, Save, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/context/AuthContext';
+import { db } from '@/lib/db';
 
 export default function StudentProfilePage() {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'security' | 'billing'>('profile');
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -12,16 +15,55 @@ export default function StudentProfilePage() {
     email: 'aarav.patel@gmail.com',
     phone: '+91 98765 43210',
     location: 'Mumbai, India',
-    joinedDate: 'May 10, 2026',
+    joinedDate: 'May 2026',
     currentLevel: 'Intermediate (B1)',
   });
 
-  const handleSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!user) return;
+    const userId = user.id;
+    const userName = user.name;
+    const userEmail = user.email;
+    async function loadProfile() {
+      const data = await db.getProfile(userId);
+      if (data) {
+        setProfileData({
+          name: data.name || userName || 'Student User',
+          email: data.email || userEmail || 'student@tesca.com',
+          phone: data.phone || '',
+          location: data.location || '',
+          joinedDate: data.created_at
+            ? new Date(data.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+            : 'May 2026',
+          currentLevel: data.level || 'Intermediate (B1)',
+        });
+      }
+    }
+    loadProfile();
+  }, [user]);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaveSuccess(true);
-    setTimeout(() => {
-      setSaveSuccess(false);
-    }, 3000);
+    if (!user) return;
+    
+    const success = await db.updateProfile(user.id, {
+      name: profileData.name,
+      email: profileData.email,
+      phone: profileData.phone,
+      location: profileData.location
+    });
+
+    if (success) {
+      setSaveSuccess(true);
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+    }
+  };
+
+  const getInitials = () => {
+    if (!profileData.name) return 'S';
+    return profileData.name.charAt(0).toUpperCase();
   };
 
   return (
@@ -37,7 +79,7 @@ export default function StudentProfilePage() {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white border border-gray-100 rounded-2xl p-5 text-center shadow-soft">
             <div className="relative mx-auto h-20 w-20 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold mb-4">
-              A
+              {getInitials()}
               <span className="absolute bottom-0 right-0 h-4.5 w-4.5 rounded-full bg-emerald-500 border-2 border-white" />
             </div>
             <h3 className="text-base font-bold text-gray-800">{profileData.name}</h3>
@@ -51,7 +93,7 @@ export default function StudentProfilePage() {
               <div className="w-px bg-gray-100" />
               <div>
                 <p className="text-gray-400">Joined</p>
-                <p className="text-gray-700 font-bold mt-0.5">May 2026</p>
+                <p className="text-gray-700 font-bold mt-0.5">{profileData.joinedDate}</p>
               </div>
             </div>
           </div>

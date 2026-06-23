@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Phone, MessageSquare, Check, X, PhoneCall, CheckCircle } from 'lucide-react';
+import { db } from '@/lib/db';
 
 interface Lead {
   id: string;
@@ -15,46 +16,29 @@ interface Lead {
 
 export default function AdminLeadsPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [leads, setLeads] = useState<Lead[]>([
-    {
-      id: 'lead-1',
-      name: 'Vikram Singh',
-      phone: '+91 91234 56789',
-      email: 'vikram.singh@gmail.com',
-      notes: 'Interested in the Spoken English Mastery course. Prefers morning batches.',
-      status: 'new',
-      dateAdded: 'June 23, 2026',
-    },
-    {
-      id: 'lead-2',
-      name: 'Anjali Sharma',
-      email: 'anjali.s@yahoo.com',
-      phone: '+91 98123 45670',
-      notes: 'Wants to improve business vocabulary for upcoming job interviews.',
-      status: 'contacted',
-      dateAdded: 'June 22, 2026',
-    },
-    {
-      id: 'lead-3',
-      name: 'Suresh Patel',
-      phone: '+91 99000 88812',
-      email: 'suresh.patel@gmail.com',
-      notes: 'Registered for a free level assessment. Waiting for callback.',
-      status: 'new',
-      dateAdded: 'June 21, 2026',
-    },
-    {
-      id: 'lead-4',
-      name: 'Meera Deshmukh',
-      phone: '+91 98222 33344',
-      email: 'meera.d@gmail.com',
-      notes: 'Converted from lead to enrolled student today!',
-      status: 'converted',
-      dateAdded: 'June 18, 2026',
-    },
-  ]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleUpdateStatus = (id: string, status: 'contacted' | 'converted') => {
+  useEffect(() => {
+    async function load() {
+      const data = await db.getLeads();
+      const mapped = data.map((l: any) => ({
+        id: l.id,
+        name: l.name,
+        phone: l.phone,
+        email: l.email || '',
+        notes: l.notes || '',
+        status: l.status as any,
+        dateAdded: l.date_added,
+      }));
+      setLeads(mapped);
+      setLoading(false);
+    }
+    load();
+  }, []);
+
+  const handleUpdateStatus = async (id: string, status: 'contacted' | 'converted') => {
+    await db.updateLeadStatus(id, status);
     setLeads(leads.map((l) => (l.id === id ? { ...l, status } : l)));
   };
 

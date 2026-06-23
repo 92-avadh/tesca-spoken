@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Play, Award, CheckCircle, Search, Clock, BookOpen, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { db } from '@/lib/db';
 
 interface Course {
   id: string;
@@ -19,42 +20,52 @@ interface Course {
 export default function StudentCoursesPage() {
   const [activeTab, setActiveTab] = useState<'active' | 'completed'>('active');
   const [searchQuery, setSearchQuery] = useState('');
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const courses: Course[] = [
-    {
-      id: 'spoken-english-intermediate',
-      title: 'Spoken English Mastery — Intermediate',
-      trainer: 'Sarah Jenkins',
-      image: '/course-english.jpg',
-      progress: 77,
-      totalLessons: 18,
-      completedLessons: 14,
-      category: 'Fluency & Pronunciation',
-      lastActive: '2 hours ago',
-    },
-    {
-      id: 'business-communication',
-      title: 'Business Communication & Interview Prep',
-      trainer: 'David Vance',
-      image: '/course-business.jpg',
-      progress: 30,
-      totalLessons: 20,
-      completedLessons: 6,
-      category: 'Professional Skills',
-      lastActive: '3 days ago',
-    },
-    {
-      id: 'vocabulary-accelerator',
-      title: 'Vocabulary & Idioms Accelerator',
-      trainer: 'Emma Watson',
-      image: '/course-vocab.jpg',
-      progress: 100,
-      totalLessons: 12,
-      completedLessons: 12,
-      category: 'Vocabulary',
-      lastActive: 'Completed on May 12, 2026',
-    },
-  ];
+  useEffect(() => {
+    async function load() {
+      const data = await db.getCourses();
+      const mapped = data.map((c: any) => {
+        let progress = 0;
+        let completed = 0;
+        let lastActive = 'Never';
+        
+        if (c.id === 'spoken-english-intermediate') {
+          progress = 77;
+          completed = 14;
+          lastActive = '2 hours ago';
+        } else if (c.id === 'business-communication') {
+          progress = 30;
+          completed = 6;
+          lastActive = '3 days ago';
+        } else if (c.id === 'vocabulary-accelerator') {
+          progress = 100;
+          completed = c.lessons_count || 12;
+          lastActive = 'Completed on May 12, 2026';
+        } else {
+          progress = 0;
+          completed = 0;
+          lastActive = 'New Enrollment';
+        }
+
+        return {
+          id: c.id,
+          title: c.title,
+          trainer: c.trainer,
+          image: c.image || '/course-english.jpg',
+          progress,
+          totalLessons: c.lessons_count || 12,
+          completedLessons: completed,
+          category: c.category,
+          lastActive,
+        };
+      });
+      setCourses(mapped);
+      setLoading(false);
+    }
+    load();
+  }, []);
 
   const filteredCourses = courses.filter((course) => {
     const matchesTab = activeTab === 'completed' ? course.progress === 100 : course.progress < 100;
