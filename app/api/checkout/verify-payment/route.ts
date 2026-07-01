@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
     if (studentId) {
       const courseId =
         planId === 'starter'
-          ? 'spoken-english-basic'
+          ? 'spoken-english-intermediate'
           : planId === 'professional'
           ? 'business-communication'
           : 'vocabulary-accelerator';
